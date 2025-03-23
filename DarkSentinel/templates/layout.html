@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dark Web Monitor{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Dark Web Monitor...</div>
+    </div>
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-shield-alt me-2"></i>
+                Dark Web Monitor
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'scan_history' %}active{% endif %}" href="{{ url_for('scan_history') }}">
+                            <i class="fas fa-history me-1"></i> Scan History
+                        </a>
+                    </li>
+                    {% if current_user.is_admin %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-cogs me-1"></i> Admin
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('manage_keywords') }}">
+                                    <i class="fas fa-key me-1"></i> Keywords
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('manage_targets') }}">
+                                    <i class="fas fa-crosshairs me-1"></i> Scan Targets
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('manage_rules') }}">
+                                    <i class="fas fa-filter me-1"></i> Detection Rules
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i> {{ current_user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('settings') }}">
+                                    <i class="fas fa-cog me-1"></i> Settings
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'login' %}active{% endif %}" href="{{ url_for('login') }}">
+                            <i class="fas fa-sign-in-alt me-1"></i> Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'register' %}active{% endif %}" href="{{ url_for('register') }}">
+                            <i class="fas fa-user-plus me-1"></i> Register
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mt-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-3 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">
+                <small>Dark Web Monitor &copy; 2025 - Protect your organization from data leaks</small>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Common JavaScript -->
+    <script>
+        // Get current date for footer
+        document.addEventListener('DOMContentLoaded', function() {
+            let now = new Date();
+            document.querySelectorAll('.current-year').forEach(el => {
+                el.textContent = now.getFullYear();
+            });
+        });
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+    
+    <!-- Loading Screen JavaScript -->
+    <script>
+        // Function to show loading screen
+        function showLoading() {
+            document.getElementById('loadingScreen').classList.remove('hide');
+        }
+        
+        // Function to hide loading screen
+        function hideLoading() {
+            document.getElementById('loadingScreen').classList.add('hide');
+        }
+        
+        // Hide loading screen when page is fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            hideLoading();
+            
+            // Add event listeners to show loading on navigation
+            document.addEventListener('click', function(e) {
+                // Check if it's a link or form submit
+                if (e.target.tagName === 'A' || e.target.closest('a') || 
+                    e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                    
+                    // Skip elements with data-no-loading attribute
+                    const clickedElement = e.target.tagName === 'A' || e.target.tagName === 'BUTTON' 
+                                         ? e.target 
+                                         : (e.target.closest('a') || e.target.closest('button'));
+                    
+                    if (clickedElement && clickedElement.getAttribute('data-no-loading') === 'true') {
+                        return;
+                    }
+                    
+                    // Skip if it's a dropdown toggle or has a data-bs attribute (Bootstrap components)
+                    if (clickedElement && (
+                        clickedElement.getAttribute('data-bs-toggle') || 
+                        clickedElement.classList.contains('dropdown-toggle') ||
+                        clickedElement.classList.contains('btn-close')
+                    )) {
+                        return;
+                    }
+                    
+                    // Show loading for links with href that aren't # or javascript:void(0)
+                    if (clickedElement && clickedElement.tagName === 'A') {
+                        const href = clickedElement.getAttribute('href');
+                        if (href && href !== '#' && !href.startsWith('javascript:') && !href.startsWith('#')) {
+                            showLoading();
+                        }
+                    }
+                    
+                    // Show loading for form submit buttons
+                    if (clickedElement && clickedElement.tagName === 'BUTTON' && 
+                        (clickedElement.type === 'submit' || clickedElement.closest('form'))) {
+                        showLoading();
+                    }
+                }
+            });
+            
+            // Add event listeners to forms
+            document.querySelectorAll('form').forEach(form => {
+                if (!form.getAttribute('data-no-loading')) {
+                    form.addEventListener('submit', function() {
+                        showLoading();
+                    });
+                }
+            });
+        });
+        
+        // Show loading screen when leaving the page
+        window.addEventListener('beforeunload', function() {
+            showLoading();
+        });
+    </script>
+</body>
+</html>
