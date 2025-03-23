@@ -1,0 +1,119 @@
+{% extends "layout.html" %}
+
+{% block title %}Settings - Dark Web Monitor{% endblock %}
+
+{% block content %}
+<h1><i class="fas fa-cog me-2"></i> Settings</h1>
+
+<div class="row mt-4">
+    <div class="col-md-6 mb-4">
+        <div class="card bg-dark shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bell me-2"></i> Notification Settings</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('settings') }}" method="POST">
+                    <div class="mb-3 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="email_alerts" name="email_alerts" {% if settings.email_alerts %}checked{% endif %}>
+                        <label class="form-check-label" for="email_alerts">Email Alerts</label>
+                        <div class="form-text">Receive email notifications when potential breaches are detected</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="min_confidence_threshold" class="form-label">Minimum Confidence Threshold</label>
+                        <div class="d-flex align-items-center">
+                            <input type="range" class="form-range" min="0.5" max="0.95" step="0.05" id="min_confidence_threshold" name="min_confidence_threshold" value="{{ settings.min_confidence_threshold }}">
+                            <span class="ms-2" id="thresholdValue">{{ (settings.min_confidence_threshold * 100)|int }}%</span>
+                        </div>
+                        <div class="form-text">Only receive alerts for breaches with confidence above this threshold</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-info" id="testEmailBtn">
+                            <i class="fas fa-envelope me-2"></i> Send Test Email
+                        </button>
+                    </div>
+                    
+                    <hr>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Save Notification Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card bg-dark shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user-shield me-2"></i> Account Settings</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('settings') }}" method="POST">
+                    <!-- Include the notification settings hidden fields for the form -->
+                    <input type="hidden" name="email_alerts" value="{% if settings.email_alerts %}on{% endif %}">
+                    <input type="hidden" name="min_confidence_threshold" value="{{ settings.min_confidence_threshold }}">
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" value="{{ current_user.username }}" disabled>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" value="{{ current_user.email }}" disabled>
+                    </div>
+                    
+                    <hr>
+                    <h5 class="mb-3">Change Password</h5>
+                    
+                    <div class="mb-3">
+                        <label for="current_password" class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="current_password" name="current_password">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-key me-2"></i> Change Password
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Email Form (hidden) -->
+<form id="testEmailForm" action="{{ url_for('test_email') }}" method="POST" class="d-none"></form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update the threshold value display
+        const thresholdSlider = document.getElementById('min_confidence_threshold');
+        const thresholdValue = document.getElementById('thresholdValue');
+        
+        thresholdSlider.addEventListener('input', function() {
+            thresholdValue.textContent = Math.round(thresholdSlider.value * 100) + '%';
+        });
+        
+        // Handle test email button
+        const testEmailBtn = document.getElementById('testEmailBtn');
+        const testEmailForm = document.getElementById('testEmailForm');
+        
+        testEmailBtn.addEventListener('click', function() {
+            testEmailForm.submit();
+        });
+    });
+</script>
+{% endblock %}
