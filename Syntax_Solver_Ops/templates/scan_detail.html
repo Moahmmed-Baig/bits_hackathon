@@ -1,0 +1,124 @@
+{% extends "layout.html" %}
+
+{% block title %}Scan Details - Dark Web Monitor{% endblock %}
+
+{% block extra_head %}
+<style>
+    .breach-item {
+        transition: transform 0.2s;
+    }
+    .breach-item:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="fas fa-search me-2"></i> Scan Details
+    </h1>
+    <div>
+        <a href="{{ url_for('scan_history') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Scan History
+        </a>
+    </div>
+</div>
+
+<div class="card bg-dark shadow mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Scan Information</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Scan ID:</strong> <span id="scanId">{{ scan.id }}</span></p>
+                <p><strong>Date:</strong> {{ scan.scan_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                <p><strong>User:</strong> {{ scan.user.username }}</p>
+            </div>
+            <div class="col-md-6">
+                <p>
+                    <strong>Status:</strong> 
+                    <span id="scanStatus" class="badge {% if scan.status == 'completed' %}bg-success{% elif scan.status == 'in_progress' %}bg-warning{% else %}bg-danger{% endif %}">
+                        {{ scan.status.replace('_', ' ').title() }}
+                    </span>
+                </p>
+                <p><strong>URLs Scanned:</strong> <span id="urlsScanned">{{ scan.urls_scanned }}</span></p>
+                <p><strong>Breaches Detected:</strong> <span id="breachesDetected">{{ breaches|length }}</span></p>
+            </div>
+        </div>
+
+        {% if scan.status == 'in_progress' %}
+        <div class="alert alert-warning">
+            <i class="fas fa-spinner fa-spin me-2"></i> This scan is still in progress. Results will update automatically.
+        </div>
+        <div class="progress mb-3">
+            <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: 100%"></div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if breaches %}
+<h2 class="mb-3">Detected Breaches ({{ breaches|length }})</h2>
+
+<div class="row">
+    {% for breach in breaches %}
+    <div class="col-md-6 mb-4">
+        <div class="card bg-dark shadow h-100 breach-item">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="fas fa-exclamation-triangle me-2 {% if breach.confidence_score > 0.9 %}text-danger{% elif breach.confidence_score > 0.7 %}text-warning{% else %}text-info{% endif %}"></i>
+                    {{ breach.breach_type.replace('_', ' ').title() }}
+                </span>
+                <span class="badge breach-status-badge {% if breach.status == 'new' %}bg-primary{% elif breach.status == 'reviewed' %}bg-info{% elif breach.status == 'confirmed' %}bg-danger{% elif breach.status == 'false_positive' %}bg-success{% endif %}" data-breach-id="{{ breach.id }}">
+                    {{ breach.status.replace('_', ' ').title() }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small>Confidence</small>
+                        <small>{{ (breach.confidence_score * 100)|int }}%</small>
+                    </div>
+                    <div class="confidence-meter">
+                        <div class="confidence-level {% if breach.confidence_score > 0.9 %}confidence-high{% elif breach.confidence_score > 0.7 %}confidence-medium{% else %}confidence-low{% endif %}" style="width: {{ (breach.confidence_score * 100)|int }}%"></div>
+                    </div>
+                </div>
+                
+                <h6>Content Snippet:</h6>
+                <div class="breach-snippet small text-truncate-3 mb-3">{{ breach.content_snippet }}</div>
+                
+                <p class="mb-0"><small class="text-muted">Discovered: {{ breach.discovery_time.strftime('%Y-%m-%d %H:%M:%S') }}</small></p>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ url_for('breach_detail', breach_id=breach.id) }}" class="btn btn-primary">
+                    <i class="fas fa-eye me-2"></i> View Details
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card bg-dark shadow text-center p-5">
+    {% if scan.status == 'in_progress' %}
+    <div>
+        <i class="fas fa-search fa-4x mb-3 text-warning"></i>
+        <h3>Scan in Progress</h3>
+        <p class="lead">The scan is still running. Breaches will appear here when detected.</p>
+    </div>
+    {% else %}
+    <div>
+        <i class="fas fa-shield-alt fa-4x mb-3 text-success"></i>
+        <h3>No Breaches Detected</h3>
+        <p class="lead">No potential data breaches were found during this scan.</p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/scan.js') }}"></script>
+{% endblock %}
